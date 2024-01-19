@@ -12,11 +12,13 @@ def get_article_soup_object(url):
     Returns:
         bs4.BeautifulSoup - A beautifulSoup object containing the parsed content of the article's page.
     '''
-    url = "https://ar.wikipedia.org/wiki/%D8%A7%D9%84%D9%86%D8%A7%D8%AF%D9%8A_%D8%A7%D9%84%D8%A3%D9%87%D9%84%D9%8A_(%D9%85%D8%B5%D8%B1)"
     return BeautifulSoup(requests.get(url).text, 'html.parser')
 
+def get_article_body_element(soup):
+    return soup.find(class_ = 'mw-content-rtl mw-parser-output') # Get div the contains the body of the article.
+
 def get_body_text_content(soup):
-    body = soup.find(class_ = 'mw-content-rtl mw-parser-output') # Get div the contains the body of the article.
+    body = get_article_body_element(soup) # Get div the contains the body of the article.
     # Remove tables and other elements to get the article's text only.
     infobox = body.find(class_ = 'infobox')
     infobox_v2 = body.find(class_ = 'infobox infobox_v2')
@@ -51,7 +53,7 @@ def scrape_article(url, save_as_json = True):
         url: Srting - Arabic wikipedia article URL.
         save_as_json: Bool - wether to save to article content as json in a folder called output. Default: True.
     Returns:
-
+        articles_dict: Dictionary - Dictionary Object caontaining the information retrieved from the article.
     '''
     article_dict = dict()
     soup = get_article_soup_object(url)
@@ -63,6 +65,3 @@ def scrape_article(url, save_as_json = True):
     if(save_as_json):
         save_article_data_to_json(article_dict)
     return article_dict
-
-# Example of how to use previous code:
-#scrape_article('https://ar.wikipedia.org/wiki/%D8%A7%D9%84%D9%86%D8%A7%D8%AF%D9%8A_%D8%A7%D9%84%D8%A3%D9%87%D9%84%D9%8A_(%D9%85%D8%B5%D8%B1)')
