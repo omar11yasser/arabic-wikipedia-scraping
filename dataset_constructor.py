@@ -2,12 +2,10 @@
 import pandas as pd
 
 # Import useful functions from the article scrapper
-from arabic_wikipedia_scraper import get_article_soup_object
-from arabic_wikipedia_scraper import get_article_body_element
+from arabic_wikipedia_scraper import WikipediaArabicArticleScraper
 class DatasetConstructor:
     
-    @staticmethod
-    def check_url_validity(a_tag):
+    def check_url_validity(self, a_tag):
         '''
         Given an a tag which contains the title and the path of the article, this function decides whether it should be added as part of the dataset or note.
         Args: 
@@ -49,9 +47,10 @@ class DatasetConstructor:
         return pd.DataFrame.from_records(articles_path, columns= ['name', 'URL'])
 
     def create_dataset(self, url, number_of_articles = 5000):
-        soup = get_article_soup_object(url)
+        scraper = WikipediaArabicArticleScraper()
+        soup = scraper.get_article_soup_object(url)
         print('Soup object created!')
-        body = get_article_body_element(soup)
+        body = scraper.get_article_body_element(soup)
         links_df = self.get_article_body_links(body)
         print('Numbers of urls in the output dataframe: ', links_df.shape[0])
         links_df.to_csv('output/obtained_links.csv', index= False)
