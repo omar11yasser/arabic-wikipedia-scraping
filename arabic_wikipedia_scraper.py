@@ -14,11 +14,23 @@ class WikipediaArabicArticleScraper():
             bs4.BeautifulSoup - A beautifulSoup object containing the parsed content of the article's page.
         '''
         return BeautifulSoup(requests.get(url).text, 'html.parser')
-    
+
     def get_article_body_element(self, soup):
         return soup.find(class_ = 'mw-content-rtl mw-parser-output') # Get div the contains the body of the article.
 
+    def get_article_title_from_soup_object(self, soup):
+        title_h1_element = soup.find('h1', {'id' : 'firstHeading'})
+        if title_h1_element == None:
+            return None
+        return title_h1_element.get_text()  # Get the article's title as a string.
+
     def get_body_text_content(self, soup):
+        '''
+        Get body element and filter the irrelevant parts.
+        Args:
+        soup: bs4.element.Tag - soup object of the article.
+        Returns: String - All the text in the relevant parts of the body.
+        '''
         body = self.get_article_body_element(soup) # Get div the contains the body of the article.
         # Remove tables and other elements to get the article's text only.
         infobox = body.find(class_ = 'infobox')
@@ -26,17 +38,25 @@ class WikipediaArabicArticleScraper():
         navigation = body.find(class_ = 'navbox')
         hatnote = body.find(class_ = 'hatnote navigation-not-searchable')
         tables = body.find(class_ = 'wikitable')
-
-        infobox.decompose() # Remove side info box
-        infobox_v2.decompose() # Remove side info box
-        navigation.decompose() # Remove navigation elements
-        hatnote.decompose() # Remove hat note
-        tables.decompose() # Remove tables
+        
+        if infobox != None:
+            infobox.decompose() # Remove side info box
+        if infobox_v2 != None:
+            infobox_v2.decompose() # Remove side info box
+        if navigation != None:
+            navigation.decompose() # Remove navigation elements
+        if hatnote != None:
+            hatnote.decompose() # Remove hat note
+        if tables != None:
+            tables.decompose() # Remove tables
 
         return body.get_text().strip()
 
     def get_article_list_categories(self, soup):
-        cat_links = soup.find(id = 'mw-normal-catlinks').find_all('li') # Get div the items inside the categotiries list
+        categories_element = soup.find(id = 'mw-normal-catlinks')
+        if categories_element == None:
+            return []
+        cat_links = categories_element.find_all('li') # Get div the items inside the categotiries list
         return [category_element.get_text() for category_element in cat_links ] # Iterate over all the elements in the categories list and get the element's title text.
 
     def save_article_data_to_json(self, article_dict):
@@ -44,7 +64,6 @@ class WikipediaArabicArticleScraper():
         os.makedirs(os.path.dirname(file_path), exist_ok=True) # If the task path is not existing it will create it.
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(article_dict, f, ensure_ascii = False, indent = 4)
-            print('json file saved!')
 
     def scrape_article(self, url, save_as_json = True):
         '''
@@ -58,8 +77,9 @@ class WikipediaArabicArticleScraper():
         '''
         article_dict = dict()
         soup = self.get_article_soup_object(url)
-        print('Soup object created!')
-        article_dict['title'] = soup.find('h1', {'id' : 'firstHeading'}).get_text() # Get the article's title as a string.
+        article_dict['title'] = self.get_article_title_from_soup_object(soup)
+        if article_dict['title'] == None:
+            return None
         article_dict['url'] = url
         article_dict['body'] = self.get_body_text_content(soup) # Get the article's body as string.
         article_dict['categories'] = self.get_article_list_categories(soup)
